@@ -1,0 +1,89 @@
+Q: How can I implement dynamic scrolling of rows in "seconds" + "random" mode without losing user progress?
+A: When the user finishes typing all words in the second visible row, remove the first row from your rows list (e.g., rows.pop(0)) and append a newly generated row at the end. Adjust your typed_words and char_colors lists similarly by removing the first row’s data and appending placeholders for the new row. Reset current_row_index to 1 and recalculate current_word_global_index accordingly to keep the indices in sync and avoid out-of-bounds errors.
+
+Q: How can I keep typed_words and displayed rows synchronized when words are added, removed, or modes switched?
+A: Always ensure typed_words has an entry for every word currently displayed. When adding or removing rows, extend or trim typed_words accordingly, filling with empty strings for new words. When switching modes, regenerate rows and reset typed_words and char_colors arrays to match the new content size.
+
+Q: How do I ensure the timer starts only when the user actually begins typing?
+A: Set a flag typing_started to False initially. On the first printable keypress event (check event.unicode.isprintable()), set typing_started to True and record start_time with time.time(). Use this start_time for elapsed time calculations.
+
+Q: How can I preprocess real text from a corpus to display neatly in fixed-length rows?
+A: Use sentence tokenization (sent_tokenize) on raw text, then tokenize sentences into words. Append punctuation to preceding words to keep tokens natural. Collect words until you reach a minimum threshold, then truncate if exceeding maximum length. Finally, split the word list into chunks of fixed size (e.g., 10) to form rows.
+
+Q: How can I center text rows horizontally regardless of their length?
+A: When drawing each row, first render all characters and sum their widths including spaces. Calculate the starting x position as (screen_width / 2) minus (total row width / 2). Render each character sequentially starting from this x, so the whole row is centered.
+
+Q: How do I handle backspacing across multiple words and rows while keeping state consistent?
+A: On backspace, if there is input in the current word, delete the last character. If the current word is empty and current_word_global_index > 0, decrement current_word_global_index, update current_row_index and current_word_index, and load the previous word’s typed input into user_input. Update typed_words and character colors accordingly.
+
+Q: How can I link buttons to dynamically change modes, measures, and test durations without restarting the program?
+A: Define pygame.Rect buttons for each option and check for mouse clicks within their bounds. On click, update global variables like mode, measure, seconds, or words, then call reset_test with appropriate parameters to keep or regenerate word rows. Update the layout and reinitialize colors to reflect changes instantly.
+
+Q: How can I prevent index errors when users type beyond the initial word list?
+A: Before updating typed_words at current_word_global_index, check if typed_words is long enough. If not, append empty strings until it reaches that length. This ensures you never index out of bounds.
+
+Q: How do I backup and restore real text rows during resets to avoid regenerating content unnecessarily?
+A: When loading real text rows, make a deep copy (e.g., [row[:] for row in rows]) and store it in a backup variable. On reset, if keep_rows is True and mode is “real”, restore rows from this backup instead of regenerating.
+
+Q: How can I dynamically calculate vertical offsets to keep rows vertically centered?
+A: Calculate TOP_OFFSET as (screen_height - num_rows × line_height) // 2 each time the number of rows changes or the layout resets. Use this TOP_OFFSET to position rows vertically so the block remains centered.
+
+Q: How do I distinguish printable characters from control keys during typing events?
+A: In your keydown event handler, check if event.unicode.isprintable() before appending to user_input. This filters out keys like arrows or function keys from altering input.
+
+Q: How do I handle punctuation correctly when tokenizing real text?
+A: After tokenizing a sentence into words, iterate through tokens and append punctuation marks (e.g., ".", ",", "!", "?", etc.) to the preceding word instead of treating them as separate tokens. This preserves natural word forms for typing.
+
+Q: How can I implement per-character color feedback showing correctness during typing?
+A: Maintain a 3D list (rows × words × chars) of color values. After each input change, compare each typed character to the corresponding target character and assign WHITE for correct, RED for incorrect, and LIGHT_GRAY for untyped. Use this color data when rendering each character.
+
+Q: How can I implement dynamic adjustment of the number of rows based on word count or time settings?
+A: When the user selects a word count for the test, compute the number of rows as ceil(words / words_per_row). Update the global num_rows variable accordingly and regenerate or reset rows to match. For time-based modes, keep a fixed number of rows or dynamically load new rows as typing progresses.
+
+Q: How do I implement retry and new word set functionality triggered by key presses?
+A: On detecting specific key presses like Tab (retry) or Ctrl (new words), call reset_test with parameters controlling whether to keep or regenerate rows. For new words, generate new rows (random or real text), reinitialize color states, and reset all relevant counters to start fresh.
+
+Q: How can I implement UI buttons that reflect active selections (e.g., highlight currently chosen mode or time)?
+A: When drawing buttons, pass an 'active' flag that changes the button color or text color to visually indicate selection. Check the current mode/measure/seconds/words variables against each button and set active=True accordingly. Draw buttons with different colors or bold fonts when active.
+
+Q: How can I safely handle user input length when updating character colors without out-of-range errors?
+A: When iterating character positions, loop up to max(len(typed_word), len(target_word)) to cover cases where user input is longer or shorter. For positions beyond the length of either string, treat missing characters as incorrect or untyped and assign colors accordingly.
+
+Q: How can I implement proper capitalization and punctuation matching in accuracy and coloring?
+A: Compare characters exactly including case and punctuation marks. You can also add optional case-insensitive modes by normalizing both typed and target words to lower case before comparison. For punctuation, ensure the tokenization keeps punctuation attached to words consistently.
+
+Q: How do I manage global and local variable scopes properly when resetting or updating test state?
+A: Use the 'global' keyword inside functions that modify global state variables. Keep state variables grouped at the top or in a class to minimize confusion. When resetting, update all related variables consistently to avoid stale or mismatched states.
+
+Q: How can I implement a visual progress indicator showing words typed out of total words in word count mode?
+A: Maintain a counter words_typed incremented each time the user finishes a word. Display text like “words_typed/words” at a fixed position on screen updated every frame. Make sure to update this only when words_typed changes.
+
+Q: How can I smoothly handle user input when switching between modes mid-test?
+A: When switching modes, call reset_test to clear current input and timing. Regenerate or restore appropriate rows for the new mode. Update UI button states to reflect the mode change. This avoids conflicts from partially typed input carried over from previous mode.
+
+Q: How can I modularize rendering logic for better readability and maintainability?
+A: Split rendering code into separate functions, e.g., draw_buttons(), draw_rows(), draw_cursor(), draw_timer(), draw_results(). Call these from your main loop in order. This separation helps debug and enhances clarity.
+
+Q: How can I implement character-by-character feedback that updates immediately on each keypress?
+A: After every keypress event that modifies user_input, call a function to update the color matrix for the current word. Then redraw the entire row with updated colors. This instant feedback improves user experience.
+
+Q: How do I handle special cases when user input exceeds the length of the target word?
+A: When user input is longer, mark extra characters as incorrect (red) in the color feedback. Also prevent advancing to the next word until the current word is correctly typed or space is pressed, based on your design.
+
+Q: How can I avoid mutating lists accidentally when backing up or resetting data?
+A: Use list comprehensions with slices (e.g., [row[:] for row in rows]) to create deep copies of nested lists instead of assigning references. This preserves original data and avoids side effects when modifying copies.
+
+Q: How do I efficiently clear the screen and redraw only what is necessary each frame?
+A: Call screen.fill() at the start of each frame to clear previous drawings. Then draw the UI elements, text rows, buttons, timer, and cursor in the correct order. Avoid redundant drawing calls to maintain performance.
+
+Q: How do I structure the main game loop to handle events, update state, and render in a clear sequence?
+A: Within each frame, first handle all pygame events (input, quit). Then update game state variables based on input and timing. Finally, draw all visual elements before flipping the display. This sequence ensures responsive input and smooth rendering.
+
+Q: How can I implement a function to chunk a flat word list into fixed-size rows?
+A: Write a helper function that takes a list and chunk size, then returns a list of sublists where each sublist has up to chunk size elements, e.g., by slicing the list in a loop with steps of chunk size.
+
+Q: How can I handle differences in screen resolution and dynamically position UI elements?
+A: Use pygame.display.Info() to get screen dimensions. Calculate positions and sizes of buttons and text elements as fractions of screen width/height for scalability. Recalculate layouts on window resize events if needed.
+
+Q: How do I implement word wrapping or horizontal scrolling if a row becomes too long?
+A: For fixed word count per row, this is unnecessary. But for dynamic text, calculate total row width; if exceeding screen width, either break into additional rows or implement horizontal scrolling by shifting rendering x-coordinates with an offset updated by user input or automatic scrolling.

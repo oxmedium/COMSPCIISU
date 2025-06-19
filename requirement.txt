@@ -1,8 +1,8 @@
-Q. how do i make the application in pygame bordered fullscreen
-A.
-info = pygame.display.Info()
-WIDTH, HEIGHT = info.current_w, info.current_h
+External modules and Libraries:
+-NLTK
+-Pygame
 
-# Set up a bordered window at full screen size
-screen = pygame.display.set_mode((WIDTH, HEIGHT))  # No flags
-pygame.display.set_caption("Typing Speed Test")
+Instracitons (Windows)
+-Run the follwoing in main directory
+    -pip install NLTK
+    -pip install pygame
